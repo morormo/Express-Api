@@ -5,6 +5,9 @@
   "repository": "git@github.com:morormo/Express-Api.git",
   "author": "Morormo <morormo@gmail.com>",
   "license": "MIT",
+  "scripts": {
+    "start": "nodemon server.js"
+  },
   "dependencies": {
     "express": "4.17.1",
     "uuid": "^8.0.0",
