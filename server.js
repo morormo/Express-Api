@@ -1,29 +1,18 @@
 const express = require('express');
 const socket = require('socket.io');
-const app = express();
 const cors = require('cors');
 const path = require('path');
+const mongoose = require('mongoose');
+
+const app = express();
 
 const testimonialsRoutes = require('./routes/testimonials.routes');
 const concertsRoutes = require('./routes/concerts.routes');
 const seatsRoutes = require('./routes/seats.routes');
 
-const mongoose = require('mongoose');
-
-const server = app.listen(process.env.PORT || 8000, () => {
-  console.log('Server is running on port: 8000');
-});
-
-const io = socket(server);
-
-io.on('connection', () => {
-  console.log('New socket!')
-});
-
+app.use(cors());
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
-app.use(cors());
-
 
 // Serve static files from the React app
 app.use(express.static(path.join(__dirname, '/client/build')));
@@ -37,7 +26,18 @@ app.use('/api', testimonialsRoutes);
 app.use('/api', concertsRoutes);
 app.use('/api', seatsRoutes);
 
-mongoose.connect('mongodb+srv://admin:admin@cluster0-4xtbl.mongodb.net/test?retryWrites=true&w=majority', { useNewUrlParser: true, useUnifiedTopology: true });
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname + '/client/build/index.html'));
+});
+
+app.use((req, res) => {
+  res.status(404).json({ message: 'Not found...' });
+});
+
+(process.env.NODE_ENV === 'production')
+? mongoose.connect(`mongodb+srv://${process.env.DB_USERNAME}:${process.env.DB_PASS}@cluster0-wufx8.azure.mongodb.net/NewWaveDB?retryWrites=true&w=majority`, { useNewUrlParser: true, useUnifiedTopology: true })
+: mongoose.connect('mongodb://localhost:27017/NewWaveDB', { useNewUrlParser: true, useUnifiedTopology: true});
+
 const db = mongoose.connection;
 
 db.once('open', () => {
@@ -45,10 +45,14 @@ db.once('open', () => {
 });
 db.on('error', err => console.log('Error ' + err));
 
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname + '/client/build/index.html'));
+const server = app.listen(process.env.PORT || 8000, () => {
+  console.log('Server is running on port: 8000');
 });
 
-app.use((req, res) => {
-  res.status(404).json({ message: 'Not found...' });
-})
+module.exports = server;
+
+const io = socket(server);
+
+io.on('connection', () => {
+  console.log('New socket!')
+});
